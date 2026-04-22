@@ -76,6 +76,8 @@
   #chat-header { padding: 12px 16px; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: space-between; }
   #chat-header span { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
   #chat-close { background: none; border: none; cursor: pointer; font-size: 16px; color: #666; line-height: 1; }
+  #remove-key { background: none; border: none; cursor: pointer; font-size: 10px; color: #999; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border: 1px solid #ddd; border-radius: 3px; line-height: 1; }
+  #remove-key:hover { color: #c00; border-color: #f5c6c6; background: #fff0f0; }
   #chat-messages { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
   .msg { max-width: 88%; font-size: 13px; line-height: 1.45; padding: 8px 12px; border-radius: 4px; }
   .msg.assistant { background: #f5f5f5; color: #000; align-self: flex-start; }
@@ -129,7 +131,10 @@
   <div id="chat-panel" class="hidden">
     <div id="chat-header">
       <span>Add via AI</span>
-      <button id="chat-close">×</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button id="remove-key" style="display:none" title="Clear your saved API key">Remove key</button>
+        <button id="chat-close">×</button>
+      </div>
     </div>
     <div id="chat-body">
       <div id="api-setup">
@@ -252,6 +257,7 @@
   const chatInputRow = $("chat-input-row");
   const chatInput    = $("chat-input");
   const chatSend     = $("chat-send");
+  const removeKey    = $("remove-key");
   let history = [];
 
   const getKey = () => localStorage.getItem(API_KEY_STORE) || "";
@@ -260,16 +266,24 @@
     apiSetup.style.display      = "none";
     chatMessages.style.display  = "flex";
     chatInputRow.style.display  = "flex";
+    removeKey.style.display     = "block";
     if (!chatMessages.children.length)
       addMsg("assistant", "Hi! Tell me what to add — e.g. \"Add dentist to Personal, high priority\" or just describe it naturally.");
   }
 
+  function showSetup() {
+    apiSetup.style.display      = "flex";
+    apiSetup.style.flexDirection = "column";
+    chatMessages.style.display  = "none";
+    chatInputRow.style.display  = "none";
+    removeKey.style.display     = "none";
+    apiKeyInput.value           = "";
+    history = [];
+  }
+
   function initPanel() {
     if (getKey()) { showChat(); return; }
-    apiSetup.style.display     = "flex";
-    apiSetup.style.flexDirection = "column";
-    chatMessages.style.display = "none";
-    chatInputRow.style.display = "none";
+    showSetup();
   }
 
   chatToggle.addEventListener("click", () => {
@@ -277,6 +291,11 @@
     if (!chatPanel.classList.contains("hidden")) initPanel();
   });
   chatClose.addEventListener("click", () => chatPanel.classList.add("hidden"));
+  removeKey.addEventListener("click", () => {
+    if (!confirm("Remove your saved API key?")) return;
+    localStorage.removeItem(API_KEY_STORE);
+    showSetup();
+  });
   apiKeySave.addEventListener("click", () => {
     const k = apiKeyInput.value.trim();
     if (!k.startsWith("sk-")) { alert("Doesn't look like a valid Anthropic API key."); return; }
