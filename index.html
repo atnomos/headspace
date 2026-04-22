@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Headspace</title>
+<style>
+  :root {
+    color-scheme: light;
+    --high:      #bf4e4e;
+    --medium:    #c99420;
+    --low:       #4a86b8;
+    --high-bg:   rgba(191, 78, 78, 0.05);
+    --medium-bg: rgba(201, 148, 32, 0.06);
+    --low-bg:    rgba(74, 134, 184, 0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #ffffff; color: #000000;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 400; line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  body { max-width: 1400px; margin: 0 auto; padding: 48px 40px 80px; }
+  header { margin-bottom: 32px; border-bottom: 1px solid #000; padding-bottom: 20px; }
+  h1 { font-size: 28px; font-weight: 500; letter-spacing: -0.01em; margin-bottom: 6px; }
+  .sub { font-size: 13px; color: #666; letter-spacing: 0.02em; }
+  .daily-banner { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 14px 24px; margin-bottom: 36px; background: #000; color: #fff; border-radius: 4px; }
+  .daily-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: #888; flex-shrink: 0; }
+  .daily-text { font-size: 15px; font-weight: 500; letter-spacing: 0.01em; }
+  .meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.08em; }
+  .counter { font-variant-numeric: tabular-nums; }
+  .legend { display: flex; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .legend-item { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px 4px 8px; border-radius: 3px; }
+  .legend-item.high   { background: var(--high-bg);   border-left: 4px solid var(--high); }
+  .legend-item.medium { background: var(--medium-bg); border-left: 4px solid var(--medium); }
+  .legend-item.low    { background: var(--low-bg);    border-left: 4px solid var(--low); }
+  .state-legend { display: flex; gap: 20px; margin-bottom: 28px; font-size: 11px; color: #777; letter-spacing: 0.04em; align-items: center; }
+  .state-legend-item { display: flex; align-items: center; gap: 7px; }
+  .mini-box { width: 13px; height: 13px; border: 1.5px solid #000; border-radius: 2px; display: flex; align-items: center; justify-content: center; background: #fff; flex-shrink: 0; }
+  .mini-box.inprogress::after { content: ""; display: block; width: 7px; height: 2px; background: #000; border-radius: 1px; }
+  .mini-box.done { background: #000; }
+  .mini-box.done::after { content: ""; display: block; width: 3px; height: 6px; border-right: 1.5px solid #fff; border-bottom: 1.5px solid #fff; transform: rotate(45deg) translate(-1px, -1px); }
+  #list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0 28px; align-items: start; }
+  .category { margin-bottom: 40px; }
+  .category-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: #000; font-weight: 600; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+  ul { list-style: none; }
+  li { display: flex; align-items: flex-start; gap: 10px; padding: 9px 6px 9px 9px; border-bottom: 1px solid #f0f0f0; border-left: 4px solid transparent; cursor: pointer; transition: opacity 0.15s ease; }
+  li:hover { opacity: 0.75; }
+  li.priority-high   { border-left-color: var(--high);   background: var(--high-bg); }
+  li.priority-medium { border-left-color: var(--medium); background: var(--medium-bg); }
+  li.priority-low    { border-left-color: var(--low);    background: var(--low-bg); }
+  li.done { opacity: 0.35; border-left-color: #ddd !important; background: none !important; }
+  li.done:hover { opacity: 0.52; }
+  li.first-done { margin-top: 8px; border-top: 1px dashed #e0e0e0; }
+  .box { flex-shrink: 0; width: 16px; height: 16px; border: 1.5px solid #000; border-radius: 2px; margin-top: 2px; display: flex; align-items: center; justify-content: center; background: #fff; transition: background 0.15s ease; }
+  li.inprogress .box::after { content: ""; display: block; width: 8px; height: 2px; background: #000; border-radius: 1px; }
+  li.done .box { background: #000; border-color: #000; }
+  li.done .box::after { content: ""; display: block; width: 3px; height: 7px; border-right: 1.5px solid #fff; border-bottom: 1.5px solid #fff; transform: rotate(45deg) translate(-1px, -1px); }
+  .task { flex: 1; font-size: 13px; color: #000; }
+  .task-note { display: block; font-size: 11px; color: #777; margin-top: 2px; letter-spacing: 0.01em; }
+  .task-link { display: inline-block; font-size: 10px; color: #000; text-decoration: none; border-bottom: 1px solid #ccc; margin-top: 3px; letter-spacing: 0.02em; }
+  .task-link:hover { border-color: #000; }
+  .sublinks { list-style: none; margin-top: 7px; display: flex; flex-direction: column; gap: 5px; }
+  .sublinks li { display: block; padding: 0; border: none; border-left: none; background: none; cursor: default; opacity: 1; }
+  .sublinks li:hover { opacity: 1; }
+  .sublinks a { font-size: 11px; color: #444; text-decoration: none; border-bottom: 1px solid #e0e0e0; padding-bottom: 1px; }
+  .sublinks a:hover { color: #000; border-color: #000; }
+  .sublinks a::before { content: "→ "; color: #bbb; font-size: 10px; }
+  li.done .task { text-decoration: line-through; color: #aaa; }
+
+  /* ── Chat widget ── */
+  #chat-toggle { position: fixed; bottom: 28px; right: 28px; width: 48px; height: 48px; border-radius: 50%; background: #000; color: #fff; border: none; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 12px rgba(0,0,0,0.18); z-index: 100; transition: background 0.15s; }
+  #chat-toggle:hover { background: #333; }
+  #chat-panel { position: fixed; bottom: 88px; right: 28px; width: 340px; max-height: 480px; background: #fff; border: 1px solid #000; border-radius: 6px; display: flex; flex-direction: column; z-index: 99; box-shadow: 0 4px 24px rgba(0,0,0,0.10); }
+  #chat-panel.hidden { display: none; }
+  #chat-header { padding: 12px 16px; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: space-between; }
+  #chat-header span { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
+  #chat-close { background: none; border: none; cursor: pointer; font-size: 16px; color: #666; line-height: 1; }
+  #chat-messages { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 88%; font-size: 13px; line-height: 1.45; padding: 8px 12px; border-radius: 4px; }
+  .msg.assistant { background: #f5f5f5; color: #000; align-self: flex-start; }
+  .msg.user { background: #000; color: #fff; align-self: flex-end; }
+  .msg.error { background: #fff0f0; color: #c00; border: 1px solid #f5c6c6; align-self: flex-start; }
+  #chat-input-row { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #e5e5e5; }
+  #chat-input { flex: 1; border: 1px solid #ddd; border-radius: 3px; padding: 7px 10px; font-size: 13px; font-family: inherit; outline: none; resize: none; height: 38px; }
+  #chat-input:focus { border-color: #000; }
+  #chat-send { background: #000; color: #fff; border: none; border-radius: 3px; padding: 0 14px; font-size: 12px; cursor: pointer; height: 38px; letter-spacing: 0.04em; }
+  #chat-send:disabled { background: #ccc; cursor: default; }
+  #api-setup { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  #api-setup p { font-size: 12px; color: #555; line-height: 1.5; }
+  #api-setup a { color: #000; }
+  #api-key-input { border: 1px solid #ddd; border-radius: 3px; padding: 8px 10px; font-size: 12px; font-family: monospace; outline: none; }
+  #api-key-input:focus { border-color: #000; }
+  #api-key-save { background: #000; color: #fff; border: none; border-radius: 3px; padding: 8px 14px; font-size: 12px; cursor: pointer; }
+
+  footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid #e5e5e5; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.08em; text-align: center; }
+  @media (max-width: 860px) { body { padding: 40px 24px 72px; } h1 { font-size: 24px; } #chat-panel { width: calc(100vw - 40px); right: 20px; } }
+  @media (max-width: 520px) { body { padding: 32px 16px 64px; } h1 { font-size: 22px; } .daily-banner { padding: 12px 16px; gap: 12px; } .daily-text { font-size: 14px; } .task { font-size: 14px; } .box { width: 18px; height: 18px; } }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Headspace</h1>
+    <div class="sub">Your personal task tracker</div>
+  </header>
+  <div class="daily-banner">
+    <span class="daily-label">Daily</span>
+    <span class="daily-text">Stay focused and make progress</span>
+  </div>
+  <div class="meta">
+    <div>To Do</div>
+    <div class="counter"><span id="done-count">0</span> done · <span id="progress-count">0</span> in progress · <span id="remaining-count">0</span> remaining</div>
+  </div>
+  <div class="legend">
+    <div class="legend-item high">High</div>
+    <div class="legend-item medium">Medium</div>
+    <div class="legend-item low">Low</div>
+  </div>
+  <div class="state-legend">
+    <div class="state-legend-item"><div class="mini-box"></div> Not started</div>
+    <div class="state-legend-item"><div class="mini-box inprogress"></div> In progress</div>
+    <div class="state-legend-item"><div class="mini-box done"></div> Done</div>
+  </div>
+  <main id="list"></main>
+  <footer>Tap to cycle: not started → in progress → done · Progress saves automatically · Built by <a href="https://wilfredo.me" target="_blank" style="color:#999;text-decoration:none;border-bottom:1px solid #ddd;">Wilfredo Valle</a></footer>
+
+  <!-- Chat widget -->
+  <button id="chat-toggle" title="Add tasks via AI">💬</button>
+  <div id="chat-panel" class="hidden">
+    <div id="chat-header">
+      <span>Add via AI</span>
+      <button id="chat-close">×</button>
+    </div>
+    <div id="chat-body">
+      <div id="api-setup">
+        <p>Enter your <a href="https://console.anthropic.com/settings/keys" target="_blank">Anthropic API key</a> to add tasks by talking to Claude. Stored only in your browser — never shared.</p>
+        <input id="api-key-input" type="password" placeholder="sk-ant-..." />
+        <button id="api-key-save">Save key</button>
+      </div>
+      <div id="chat-messages" style="display:none"></div>
+    </div>
+    <div id="chat-input-row" style="display:none">
+      <textarea id="chat-input" placeholder="Add dentist appointment to Personal, high priority…" rows="1"></textarea>
+      <button id="chat-send">Send</button>
+    </div>
+  </div>
+
+<script>
+  // ── Config ────────────────────────────────────────────────────────────────
+  const STORAGE_KEY   = "headspace-v1";
+  const API_KEY_STORE = "headspace-api-key";
+
+  // ── Data ──────────────────────────────────────────────────────────────────
+  // CLAUDE: Edit this array to add/remove categories and items.
+  // Rules:
+  //   - Never rename an existing item's `text` — it is the localStorage key.
+  //   - Append new items to the END of an items array.
+  //   - To add a category, append a new object to `data`.
+  //   - priority: "high" | "medium" | "low"
+  //   - Optional fields: note, link, linkLabel, sublinks ([{ label, url }])
+  const data = [
+    {
+      category: "Work",
+      items: [
+        { text: "Example task — replace me", priority: "high" }
+      ]
+    },
+    {
+      category: "Personal",
+      items: [
+        { text: "Another example — replace or delete", priority: "medium" }
+      ]
+    }
+  ];
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function makeKey(text) {
+    return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+  }
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
+  }
+  function saveState(s) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
+  }
+  function nextState(cur) {
+    if (!cur) return "inprogress";
+    if (cur === "inprogress") return "done";
+    return null;
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  function render() {
+    const list  = document.getElementById("list");
+    const state = loadState();
+    list.innerHTML = "";
+    data.forEach(group => {
+      const sec   = document.createElement("section");
+      sec.className = "category";
+      const lbl   = document.createElement("div");
+      lbl.className = "category-label";
+      lbl.textContent = group.category;
+      sec.appendChild(lbl);
+      const ul    = document.createElement("ul");
+      const order = { null: 0, inprogress: 1, done: 2 };
+      const rows  = group.items
+        .map(item => ({ item, key: makeKey(item.text), s: state[makeKey(item.text)] || null }))
+        .sort((a, b) => (order[a.s] ?? 0) - (order[b.s] ?? 0));
+      let firstDone = true;
+      rows.forEach(({ item, key, s }) => {
+        const li = document.createElement("li");
+        if (item.priority && s !== "done") li.classList.add(`priority-${item.priority}`);
+        li.classList.remove("inprogress", "done");
+        if (s) li.classList.add(s);
+        if (s === "done" && firstDone) { li.classList.add("first-done"); firstDone = false; }
+        const noteHTML = item.note ? `<span class="task-note">${item.note}</span>` : "";
+        const linkHTML = item.link ? `<a class="task-link" href="${item.link}" target="_blank" onclick="event.stopPropagation()">${item.linkLabel}</a>` : "";
+        const subHTML  = item.sublinks?.length
+          ? `<ul class="sublinks">${item.sublinks.map(sv => `<li><a href="${sv.url}" target="_blank" onclick="event.stopPropagation()">${sv.label}</a></li>`).join("")}</ul>`
+          : "";
+        li.innerHTML = `<span class="box"></span><span class="task">${item.text}${noteHTML}${linkHTML}${subHTML}</span>`;
+        li.addEventListener("click", () => {
+          const cur  = loadState();
+          const next = nextState(cur[key]);
+          if (next) cur[key] = next; else delete cur[key];
+          saveState(cur);
+          render();
+        });
+        ul.appendChild(li);
+      });
+      sec.appendChild(ul);
+      list.appendChild(sec);
+    });
+    const vals  = Object.values(state);
+    const done  = vals.filter(v => v === "done").length;
+    const prog  = vals.filter(v => v === "inprogress").length;
+    const total = data.reduce((s, g) => s + g.items.length, 0);
+    document.getElementById("done-count").textContent      = done;
+    document.getElementById("progress-count").textContent  = prog;
+    document.getElementById("remaining-count").textContent = total - done - prog;
+  }
+
+  // ── Chat widget ───────────────────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const chatToggle   = $("chat-toggle");
+  const chatPanel    = $("chat-panel");
+  const chatClose    = $("chat-close");
+  const apiSetup     = $("api-setup");
+  const apiKeyInput  = $("api-key-input");
+  const apiKeySave   = $("api-key-save");
+  const chatMessages = $("chat-messages");
+  const chatInputRow = $("chat-input-row");
+  const chatInput    = $("chat-input");
+  const chatSend     = $("chat-send");
+  let history = [];
+
+  const getKey = () => localStorage.getItem(API_KEY_STORE) || "";
+
+  function showChat() {
+    apiSetup.style.display      = "none";
+    chatMessages.style.display  = "flex";
+    chatInputRow.style.display  = "flex";
+    if (!chatMessages.children.length)
+      addMsg("assistant", "Hi! Tell me what to add — e.g. \"Add dentist to Personal, high priority\" or just describe it naturally.");
+  }
+
+  function initPanel() {
+    if (getKey()) { showChat(); return; }
+    apiSetup.style.display     = "flex";
+    apiSetup.style.flexDirection = "column";
+    chatMessages.style.display = "none";
+    chatInputRow.style.display = "none";
+  }
+
+  chatToggle.addEventListener("click", () => {
+    chatPanel.classList.toggle("hidden");
+    if (!chatPanel.classList.contains("hidden")) initPanel();
+  });
+  chatClose.addEventListener("click", () => chatPanel.classList.add("hidden"));
+  apiKeySave.addEventListener("click", () => {
+    const k = apiKeyInput.value.trim();
+    if (!k.startsWith("sk-")) { alert("Doesn't look like a valid Anthropic API key."); return; }
+    localStorage.setItem(API_KEY_STORE, k);
+    showChat();
+  });
+
+  function addMsg(role, text) {
+    const d = document.createElement("div");
+    d.className = `msg ${role}`;
+    d.textContent = text;
+    chatMessages.appendChild(d);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return d;
+  }
+
+  function systemPrompt() {
+    return `You are an assistant embedded in a personal todo app called Headspace.
+Current categories: ${data.map(g => g.category).join(", ")}.
+
+Respond ONLY with a JSON object — no markdown, no explanation.
+
+Shapes:
+1. Add item:       {"action":"add","category":"Name","text":"Task","priority":"high|medium|low","note":"optional","link":"optional url","linkLabel":"optional"}
+2. New category:   {"action":"add_category","category":"New Name","text":"First task","priority":"high|medium|low"}
+3. Clarify:        {"action":"clarify","message":"Your question"}
+
+Rules: If no category specified pick the best fit. If no priority specified use "medium". Keep text concise.`;
+  }
+
+  async function send() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+    chatInput.value = "";
+    chatSend.disabled = true;
+    addMsg("user", text);
+    history.push({ role: "user", content: text });
+    const thinking = addMsg("assistant", "…");
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": getKey(),
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 512, system: systemPrompt(), messages: history })
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error?.message || res.statusText);
+      const reply = json.content[0].text.trim();
+      history.push({ role: "assistant", content: reply });
+      const action = JSON.parse(reply);
+
+      if (action.action === "add") {
+        const cat = data.find(g => g.category.toLowerCase() === action.category.toLowerCase());
+        if (!cat) throw new Error(`Category "${action.category}" not found.`);
+        const item = { text: action.text, priority: action.priority || "medium" };
+        if (action.note) item.note = action.note;
+        if (action.link) { item.link = action.link; item.linkLabel = action.linkLabel || "Link"; }
+        cat.items.push(item);
+        render();
+        thinking.textContent = `Added "${action.text}" to ${cat.category}.`;
+      } else if (action.action === "add_category") {
+        data.push({ category: action.category, items: [{ text: action.text, priority: action.priority || "medium" }] });
+        render();
+        thinking.textContent = `Created "${action.category}" with "${action.text}".`;
+      } else if (action.action === "clarify") {
+        thinking.textContent = action.message;
+      }
+    } catch (err) {
+      thinking.className = "msg error";
+      thinking.textContent = `Error: ${err.message}`;
+    }
+    chatSend.disabled = false;
+    chatInput.focus();
+  }
+
+  chatSend.addEventListener("click", send);
+  chatInput.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+
+  render();
+</script>
+</body>
+</html>
